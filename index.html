@@ -5,10 +5,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+     <!-- Подключение MathJax -->
+     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <title>Трилатерация</title>
 </head>
 
 <body>
+     <!-- Иконка вопроса -->
+     <div id="help-icon">?</div>
+    <!-- Модальное окно -->
+    <div id="modal">
+        <div id="modal-content">
+            <span id="close-modal">&times;</span>
+            <h2>Метод трилатерации</h2>
+            <p>
+                Трилатерация — это метод определения положения объекта на плоскости или в пространстве на основе расстояний до нескольких известных точек (меток).
+            </p>
+            <h3>Формулы</h3>
+            <p>
+                Для трех меток с координатами \((x_1, y_1)\), \((x_2, y_2)\), \((x_3, y_3)\) и расстояниями до объекта \(d_1\), \(d_2\), \(d_3\):
+            </p>
+            <p>
+                Уравнения окружностей:
+                \[
+                (x - x_1)^2 + (y - y_1)^2 = d_1^2
+                \]
+                \[
+                (x - x_2)^2 + (y - y_2)^2 = d_2^2
+                \]
+                \[
+                (x - x_3)^2 + (y - y_3)^2 = d_3^2
+                \]
+            </p>
+            <p>
+                Решение системы уравнений:
+                \[
+                x = \frac{C E - F B}{A E - B D}
+                \]
+                \[
+                y = \frac{A F - D C}{A E - B D}
+                \]
+                где:
+                \[
+                A = 2(x_2 - x_1), \quad B = 2(y_2 - y_1), \quad C = d_1^2 - d_2^2 + x_2^2 - x_1^2 + y_2^2 - y_1^2
+                \]
+                \[
+                D = 2(x_3 - x_1), \quad E = 2(y_3 - y_1), \quad F = d_1^2 - d_3^2 + x_3^2 - x_1^2 + y_3^2 - y_1^2
+                \]
+            </p>
+            <h3>Пример</h3>
+            <p>
+                Метки:
+                \[
+                (x_1, y_1) = (0, 0), \quad d_1 = 5 \, \text{м}
+                \]
+                \[
+                (x_2, y_2) = (10, 0), \quad d_2 = 5 \, \text{м}
+                \]
+                \[
+                (x_3, y_3) = (0, 10), \quad d_3 = 5 \, \text{м}
+                \]
+                Решение:
+                \[
+                x = 5 \, \text{м}, \quad y = 5 \, \text{м}
+                \]
+            </p>
+        </div>
+    </div>
     <div class="wrapper">
 
         <h1>Демонстрация трилатерации</h1>
@@ -48,6 +112,7 @@
 
 
             <script src="trilateration.js"></script>
+            <script src="modal.js"></script>
         </div>
 </body>
 
