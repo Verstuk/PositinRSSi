@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Трилатерация</title>
+</head>
+
+<body>
+    <div class="wrapper">
+
+        <h1>Демонстрация трилатерации</h1>
+        <div class="main">
+            <form id="inputForm">
+                <label for="width">Ширина помещения (м):</label>
+                <input type="number" id="width" min="1" required>
+
+                <label for="length">Длина помещения (м):</label>
+                <input type="number" id="length" min="1" required>
+
+                <h3>Метка 1</h3>
+                <label for="marker1X">Координата X (м):</label>
+                <input type="number" id="marker1X" min="0" required>
+                <label for="marker1Y">Координата Y (м):</label>
+                <input type="number" id="marker1Y" min="0" required>
+                <label for="rssi1">Уровень сигнала (dB):</label>
+                <input type="number" id="rssi1" required>
+
+                <h3>Метка 2</h3>
+                <label for="marker2X">Координата X (м):</label>
+                <input type="number" id="marker2X" min="0" required>
+                <label for="marker2Y">Координата Y (м):</label>
+                <input type="number" id="marker2Y" min="0" required>
+                <label for="rssi2">Уровень сигнала (dB):</label>
+                <input type="number" id="rssi2" required>
+
+                <h3>Метка 3</h3>
+                <label for="marker3X">Координата X (м):</label>
+                <input type="number" id="marker3X" min="0" required>
+                <label for="marker3Y">Координата Y (м):</label>
+                <input type="number" id="marker3Y" min="0" required>
+                <label for="rssi3">Уровень сигнала (dB):</label>
+                <input type="number" id="rssi3" required>
+            </form>
+            <div><canvas id="room"></canvas></div>
+
+
+            <script src="trilateration.js"></script>
+        </div>
+</body>
+
+</html>
