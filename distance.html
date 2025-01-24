@@ -25,15 +25,15 @@
             <div id="inputForm">
                 <div>
                     <label for="rssi">Уровень сигнала (RSSI, dB):</label>
-                    <input type="number" id="rssi" required>
+                    <input type="number" id="rssi" required onmousewheel="onWheel()">
                 </div>
                 <div>
                     <label for="txPower">Мощность передатчика (P₀, dB):</label>
-                    <input type="number" id="txPower" value="-59" required>
+                    <input type="number" id="txPower" value="-59" required onmousewheel="onWheel()">
                 </div>
                 <div>
                     <label for="n">Коэффициент затухания (n):</label>
-                    <input type="number" id="n" step="0.1" value="2.5" required>
+                    <input type="number" id="n" step="0.1" value="2.5" required onmousewheel="onWheel()">
                 </div>
             </div>
             <div class="btn">
