@@ -5,22 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
-     <!-- Подключение MathJax -->
-     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- Подключение MathJax -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <title>Трилатерация</title>
 </head>
 
 <body>
-     <!-- Иконка вопроса -->
-     <div id="help-icon">?</div>
+    <!-- Иконка вопроса -->
+    <div id="help-icon">?</div>
     <!-- Модальное окно -->
     <div id="modal">
         <div id="modal-content">
             <span id="close-modal">&times;</span>
             <h2>Метод трилатерации</h2>
             <p>
-                Метод трилатерации используется для определения положения источника сигнала на основе уровня принимаемого сигнала (RSSI) от нескольких меток.
+                Метод трилатерации используется для определения положения источника сигнала на основе уровня
+                принимаемого сигнала (RSSI) от нескольких меток.
             </p>
             <h3>Основные шаги</h3>
             <p>
@@ -30,7 +31,8 @@
             </p>
             <h3>Формулы</h3>
             <p>
-                Для трех меток с координатами \((x_1, y_1)\), \((x_2, y_2)\), \((x_3, y_3)\) и расстояниями до источника \(d_1\), \(d_2\), \(d_3\):
+                Для трех меток с координатами \((x_1, y_1)\), \((x_2, y_2)\), \((x_3, y_3)\) и расстояниями до источника
+                \(d_1\), \(d_2\), \(d_3\):
             </p>
             <p>
                 Уравнения окружностей:
@@ -95,40 +97,49 @@
     </div>
     <div class="wrapper">
 
-        <h1>Black Label. Демонстрация трилатерации</h1>
+        <h1 class="title_h1">Black Label</h1>
+        <h2>Демонстрация трилатерации</h2>
         <div class="main">
-            <form id="inputForm">
-                <label for="width">Ширина помещения (м):</label>
-                <input type="number" id="width" min="1" required>
+            <div id="inputForm">
+                <div>
+                    <h3>Параметры помещения</h3>
+                    <label for="width">Ширина помещения (м):</label>
+                    <input type="number" id="width" min="1" required>
 
-                <label for="length">Длина помещения (м):</label>
-                <input type="number" id="length" min="1" required>
+                    <label for="length">Длина помещения (м):</label>
+                    <input type="number" id="length" min="1" required>
+                </div>
+                <div>
+                    <h3>Метка 1</h3>
+                    <label for="marker1X">Координата X (м):</label>
+                    <input type="number" id="marker1X" min="0" required>
+                    <label for="marker1Y">Координата Y (м):</label>
+                    <input type="number" id="marker1Y" min="0" required>
+                    <label for="rssi1">Уровень сигнала (dB):</label>
+                    <input type="number" id="rssi1" required>
+                </div>
+                <div>
+                    <h3>Метка 2</h3>
+                    <label for="marker2X">Координата X (м):</label>
+                    <input type="number" id="marker2X" min="0" required>
+                    <label for="marker2Y">Координата Y (м):</label>
+                    <input type="number" id="marker2Y" min="0" required>
+                    <label for="rssi2">Уровень сигнала (dB):</label>
+                    <input type="number" id="rssi2" required>
+                </div>
 
-                <h3>Метка 1</h3>
-                <label for="marker1X">Координата X (м):</label>
-                <input type="number" id="marker1X" min="0" required>
-                <label for="marker1Y">Координата Y (м):</label>
-                <input type="number" id="marker1Y" min="0" required>
-                <label for="rssi1">Уровень сигнала (dB):</label>
-                <input type="number" id="rssi1" required>
+                <div>
+                    <h3>Метка 3</h3>
+                    <label for="marker3X">Координата X (м):</label>
+                    <input type="number" id="marker3X" min="0" required>
+                    <label for="marker3Y">Координата Y (м):</label>
+                    <input type="number" id="marker3Y" min="0" required>
+                    <label for="rssi3">Уровень сигнала (dB):</label>
+                    <input type="number" id="rssi3" required>
+                </div>
+            </div>
 
-                <h3>Метка 2</h3>
-                <label for="marker2X">Координата X (м):</label>
-                <input type="number" id="marker2X" min="0" required>
-                <label for="marker2Y">Координата Y (м):</label>
-                <input type="number" id="marker2Y" min="0" required>
-                <label for="rssi2">Уровень сигнала (dB):</label>
-                <input type="number" id="rssi2" required>
-
-                <h3>Метка 3</h3>
-                <label for="marker3X">Координата X (м):</label>
-                <input type="number" id="marker3X" min="0" required>
-                <label for="marker3Y">Координата Y (м):</label>
-                <input type="number" id="marker3Y" min="0" required>
-                <label for="rssi3">Уровень сигнала (dB):</label>
-                <input type="number" id="rssi3" required>
-            </form>
-            <div><canvas id="room"></canvas></div>
+            <div class="canvas"><canvas id="room"></canvas></div>
 
 
             <script src="trilateration.js"></script>

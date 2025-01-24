@@ -2,6 +2,23 @@ const canvas = document.getElementById('room');
 const ctx = canvas.getContext('2d');
 const scale = 50; // Масштаб: 1 метр = 50 пикселей
 
+
+document.getElementById('width').value='20';
+document.getElementById('length').value='10';
+
+document.getElementById('marker1X').value='0';
+document.getElementById('marker1Y').value='0';
+document.getElementById('rssi1').value='-60';
+
+document.getElementById('marker2X').value='10';
+document.getElementById('marker2Y').value='0';
+document.getElementById('rssi2').value='-70';
+
+document.getElementById('marker3X').value='0';
+document.getElementById('marker3Y').value='10';
+document.getElementById('rssi3').value='-65';
+
+
 // Функция для отрисовки сетки и подписей
 function drawGrid(width, length) {
     ctx.clearRect(0, 0, canvas.width, canvas.height); // Очистка Canvas

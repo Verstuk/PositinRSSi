@@ -14,6 +14,13 @@
 
   --gradient: linear-gradient(158deg, #d77be5 0%, #be63e5 34.69%, #6c38cc 100%);
 
+  --gradient-1: linear-gradient(
+    158deg,
+    #d0d1d6 0%,
+    #4d5064 34.69%,
+    #2e2d3d 100%
+  );
+
   --font-family: "Fira Sans", sans-serif;
 
   --border-8: 8px;
@@ -23,7 +30,6 @@
 
 html {
 }
-
 
 body {
   background: var(--color-bg);
@@ -46,14 +52,51 @@ a {
 
 h1 {
   margin: 0;
-  font-size: 32px;
+  font-size: 40px;
   text-align: center;
+}
+
+
+
+h2 {
+    margin: 0;
+  font-size: 24px;
+  color: var(--color-text);
+  text-align: center;
+}
+
+h3 {
+  font-size: 18px;
+  color: var(--color-stroke);
+  margin-bottom: 10px;
+}
+
+input {
+  background: var(--color-bg-medium);
+  border: 1px solid var(--color-stroke);
+  border-radius: var(--border-8);
+  width: 150px;
+  font-size: 16px;
+  color: var(--color-text);
+  padding: 5px 10px;
+}
+
+label {
+  font-size: 14px;
+  color: var(--color-text);
+  margin-bottom: 10px;
+  display: block;
+}
+
+.title_h1 {
+  background: var(--gradient-1);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .main {
   padding: 20px;
-  display: flex;
-  gap: 64px;
 }
 
 .description {
@@ -64,6 +107,17 @@ h1 {
 
 .description > div {
   margin-bottom: 20px;
+}
+
+#inputForm {
+  display: flex;
+  gap: 64px;
+  justify-content: space-around;
+}
+
+.canvas {
+  display: flex;
+  justify-content: center;
 }
 
 #room {
@@ -78,6 +132,7 @@ h1 {
     ),
     repeating-linear-gradient(90deg, transparent, transparent 9px, #a9a9a9 10px);
 }
+
 .marker {
   width: 20px;
   height: 20px;
@@ -142,21 +197,21 @@ input {
   width: 90%;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: 0px 15px 20px rgba(255, 255, 255, 0.120);
+  box-shadow: 0px 15px 20px rgba(255, 255, 255, 0.12);
 }
 
 #modal-content::-webkit-scrollbar {
-    width: 12px;               /* ширина scrollbar */
-  }
+  width: 12px; /* ширина scrollbar */
+}
 
 #modal-content::-webkit-scrollbar-track {
-    background: var(--color-bg-light);        /* цвет дорожки */
-  }
+  background: var(--color-bg-light); /* цвет дорожки */
+}
 
 #modal-content::-webkit-scrollbar-thumb {
-    background-color: var(--color-bg);    /* цвет плашки */
-    border-radius: 20px;       /* закругления плашки */
-    border: 1px solid var(--color-stroke);  /* padding вокруг плашки */
+  background-color: var(--color-bg); /* цвет плашки */
+  border-radius: 20px; /* закругления плашки */
+  border: 1px solid var(--color-stroke); /* padding вокруг плашки */
 }
 
 #close-modal {
