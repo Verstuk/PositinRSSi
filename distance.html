@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Дистанция</title>
+        <!-- Подключение MathJax -->
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -35,6 +38,15 @@
                     <label for="n">Коэффициент затухания (n):</label>
                     <input type="number" id="n" step="0.05" value="2.5" required onmousewheel="onWheel()">
                 </div>
+
+                <div>
+                    <label for="obstacleLoss">Потери из-за препятствий (в dB)</label>
+                    <input type="number" id="obstacleLoss" step="0.5" value="0" required onmousewheel="onWheel()">
+                </div>
+                <div>
+                    <label for="snr">Отношение сигнал/шум</label>
+                    <input type="number" id="snr" step="1" value="25" required onmousewheel="onWheel()">
+                </div>
             </div>
             <div class="btn">
                 <button class="btn_distance_rssi" type="submit">Рассчитать</button>
@@ -42,6 +54,44 @@
 
         </form>
             <p id="result">Скоро посчитаем</p>
+            <div class="description">Bluetooth: Обычно соотношение сигнал/шум составляет 20–30 дБ, что достаточно для передачи аудио и данных</div>
+            <div class="formula">
+                \[
+                d = 10^{\frac{RSSI_0 - (RSSI - F_{\text{obs}} - F_{\text{int}})}{10 \cdot n}}
+                \]
+            </div>
+        <div>
+            <p>Где:</p>
+            <ul>
+                <li>\( d \) — расстояние в метрах.</li>
+                <li>\( RSSI \) — измеренное значение RSSI (в dBm).</li>
+                <li>\( RSSI_0 \) — RSSI на опорном расстоянии (обычно 1 метр, в dBm).</li>
+                <li>\( n \) — коэффициент затухания сигнала (обычно 2-4).</li>
+                <li>\( F_{\text{obs}} \) — потери из-за препятствий (в dB).</li>
+                <li>\( F_{\text{int}} \) — потери из-за интерференции (в dB).</li>
+            </ul>
+            <p></p>
+        
+            <h2>Пример расчета</h2>
+            
+            <p></p>
+            <ul>
+                <li>Для следующих значений:</li>
+                <li>\( RSSI = -80 \, \text{dBm} \)</li>
+                <li>\( RSSI_0 = -60 \, \text{dBm} \)</li>
+                <li>\( n = 2 \)</li>
+                <li>\( F_{\text{obs}} = 10 \, \text{dB} \)</li>
+                <li>\( F_{\text{int}} = 0.41 \, \text{dB} \)</li>
+            </ul>
+        
+            <p>Расстояние рассчитывается как:</p>
+            <div class="formula">
+                \[
+                d = 10^{\frac{-60 - (-80 - 10 - 0.41)}{10 \cdot 2}} = 10^{\frac{30.41}{20}} \approx 3.02 \, \text{метра}
+                \]
+            </div>
+        
+            <p>Таким образом, расстояние составляет примерно <strong>3.02 метра</strong>.</p>
         </main>
         <script src="distance.js"></script>
     </div>
