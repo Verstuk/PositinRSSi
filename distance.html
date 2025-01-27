@@ -55,6 +55,39 @@
         </form>
             <p id="result">Скоро посчитаем</p>
             <div class="description">Bluetooth: Обычно соотношение сигнал/шум составляет 20–30 дБ, что достаточно для передачи аудио и данных</div>
+            
+            <h2>Уровень сигнала RSSI при известной дистанции</h2>
+
+            <form id="rssiForm">
+                <div id="inputForm">
+                    <div>
+                        <label for="distance1">Расстояние (м):</label>
+                        <input type="number" id="distance1" step="0.05" required onmousewheel="onWheel()">
+                    </div>
+                    <div>
+                        <label for="txPower1">Мощность передатчика (P₀, -dB):</label>
+                        <input type="number" id="txPower1" value="-59" required onmousewheel="onWheel()">
+                    </div>
+                    <div>
+                        <label for="n1">Коэффициент затухания (n):</label>
+                        <input type="number" id="n1" step="0.05" value="2.5" required onmousewheel="onWheel()">
+                    </div>
+    
+                    <div>
+                        <label for="obstacleLoss1">Потери из-за препятствий (в -dB)</label>
+                        <input type="number" id="obstacleLoss1" step="0.5" value="0" required onmousewheel="onWheel()">
+                    </div>
+                    <div>
+                        <label for="snr1">Отношение сигнал/шум</label>
+                        <input type="number" id="snr1" step="1" value="25" required onmousewheel="onWheel()">
+                    </div>
+                </div>
+                <div class="btn">
+                    <button class="btn_distance_rssi" type="submit">Рассчитать</button>
+                </div>
+    
+            </form>
+                <p id="result1">Скоро посчитаем</p>
             <div class="formula">
                 \[
                 d = 10^{\frac{RSSI_0 - (RSSI - F_{\text{obs}} - F_{\text{int}})}{10 \cdot n}}
@@ -94,6 +127,7 @@
             <p>Таким образом, расстояние составляет примерно <strong>3.02 метра</strong>.</p>
         </main>
         <script src="distance.js"></script>
+        <script src="rssi.js"></script>
     </div>
 </body>
 
