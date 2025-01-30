@@ -273,9 +273,16 @@ input {
   cursor: pointer;
   font-size: 16px;
   transition: background-color 0.3s ease;
+  margin-right: 30px;
 
 }
 
 .formula {
     font-size: 28px;
+}
+
+.btn_draw {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
 }
