@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Трилатерация + RSSI</title>
+</head>
+<body>
+<div class="wrapper">
+    <nav>
+        <ul>
+            <li><a href="index.html">Трилатерация</a></li>
+            <li><a href="distance.html">Расчет расстояния</a></li>
+            <li><a href="trilat_rssi.html">Трилатерация по RSSI</a></li>
+        </ul>
+    </nav>
+    <h1 class="title_h1">Трилатерация по RSSI</h1>
+    <div class="main">
+        <form id="trilatRssiForm">
+            <div id="beaconsContainer">
+                <h3>Метки</h3>
+                <!-- Сюда будут добавляться метки -->
+            </div>
+            <button type="button" class="btn_distance_rssi" id="addBeacon">Добавить метку</button>
+            <div style="margin-top:20px;">
+                <h3>Параметры среды (общие для всех меток)</h3>
+                <label>Мощность передатчика (txPower, дБм): <input type="number" id="txPower" value="-59" required></label>
+                <label>Коэффициент затухания (n): <input type="number" id="n" value="2.5" step="0.01" required></label>
+                <label>Потери на препятствиях (dB): <input type="number" id="obstacleLoss" value="0" step="0.1" required></label>
+                <label>SNR: <input type="number" id="snr" value="25" step="1" required></label>
+            </div>
+            <div class="btn_draw">
+                <button type="button" class="btn_distance_rssi" id="calcTrilatRssi">Рассчитать</button>
+            </div>
+        </form>
+        <div id="results" class="description"></div>
+        <div class="canvas"><canvas id="room"></canvas></div>
+        <script src="trilat_rssi.js"></script>
+    </div>
+</div>
+</body>
+</html> 

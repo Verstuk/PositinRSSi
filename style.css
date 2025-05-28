@@ -300,3 +300,24 @@ input {
   align-items: center;
   gap: 10px;
 }
+
+#trilatRssiForm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+#beaconsContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+#results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}

@@ -12,6 +12,7 @@ document.getElementById('distanceForm').addEventListener('submit', function(even
         return;
     }
 
+    
 
     // Поправка на интерференцию
     const interferenceLoss = -10 * Math.log10(1 + 1 / snr);
