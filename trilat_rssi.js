@@ -178,15 +178,15 @@ function drawAllCircles(markers) {
     return { offsetX, offsetY, scaleDraw };
 }
 
-function drawLLSPoint(lls, offsetX, offsetY, scaleDraw) {
-    if (!lls) return;
+function drawMethodPoint(point, offsetX, offsetY, scaleDraw, color, label) {
+    if (!point) return;
     ctx.beginPath();
-    ctx.arc(offsetX + lls.x * scaleDraw, canvas.height - (offsetY + lls.y * scaleDraw), 7, 0, 2 * Math.PI);
-    ctx.fillStyle = 'blue';
+    ctx.arc(offsetX + point.x * scaleDraw, canvas.height - (offsetY + point.y * scaleDraw), 7, 0, 2 * Math.PI);
+    ctx.fillStyle = color;
     ctx.fill();
     ctx.font = 'bold 14px Arial';
-    ctx.fillStyle = 'blue';
-    ctx.fillText('LLS', offsetX + lls.x * scaleDraw + 10, canvas.height - (offsetY + lls.y * scaleDraw));
+    ctx.fillStyle = color;
+    ctx.fillText(label, offsetX + point.x * scaleDraw + 10, canvas.height - (offsetY + point.y * scaleDraw));
 }
 
 function circleIntersections(c1, r1, c2, r2) {
@@ -276,8 +276,10 @@ document.getElementById('calcTrilatRssi').onclick = () => {
     res += `<b>NLS:</b> ${nls ? `${nls.x.toFixed(2)}, ${nls.y.toFixed(2)}` : 'Ошибка'}<br>`;
     resultsDiv.innerHTML = res;
     const drawParams = drawAllCircles(markers);
-    if (lls && drawParams) {
-        drawLLSPoint(lls, drawParams.offsetX, drawParams.offsetY, drawParams.scaleDraw);
+    if (drawParams) {
+        drawMethodPoint(lls, drawParams.offsetX, drawParams.offsetY, drawParams.scaleDraw, 'blue', 'LLS');
+        drawMethodPoint(wls, drawParams.offsetX, drawParams.offsetY, drawParams.scaleDraw, 'orange', 'WLS');
+        drawMethodPoint(nls, drawParams.offsetX, drawParams.offsetY, drawParams.scaleDraw, 'purple', 'NLS');
         drawIntersections(markers, drawParams.offsetX, drawParams.offsetY, drawParams.scaleDraw);
     }
 }; 
