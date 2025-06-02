@@ -145,10 +145,7 @@ function drawAllCircles(markers) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const sorted = [...markers].sort((a, b) => a.dist - b.dist);
     const base = sorted[0];
-    canvas.width = 600;
-    canvas.height = 600;
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
+    // Находим min/max для автосмещения
     let minX = markers[0].x, maxX = markers[0].x, minY = markers[0].y, maxY = markers[0].y;
     markers.forEach(m => {
         minX = Math.min(minX, m.x - m.dist);
@@ -156,11 +153,22 @@ function drawAllCircles(markers) {
         minY = Math.min(minY, m.y - m.dist);
         maxY = Math.max(maxY, m.y + m.dist);
     });
-    const scaleX = (canvas.width - 40) / (maxX - minX + 1);
-    const scaleY = (canvas.height - 40) / (maxY - minY + 1);
+    // Добавляем отступы
+    const padding = 20;
+    const width = Math.ceil(maxX - minX + 2 * padding);
+    const height = Math.ceil(maxY - minY + 2 * padding);
+    // Минимальный размер
+    canvas.width = Math.max(600, width);
+    canvas.height = Math.max(600, height);
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    // Новый масштаб
+    const scaleX = (canvas.width - 2 * padding) / (maxX - minX + 1);
+    const scaleY = (canvas.height - 2 * padding) / (maxY - minY + 1);
     const scaleDraw = Math.min(scaleX, scaleY);
-    const offsetX = centerX - (base.x - minX) * scaleDraw;
-    const offsetY = centerY - (base.y - minY) * scaleDraw;
+    // Смещение для центрирования
+    const offsetX = padding - minX * scaleDraw;
+    const offsetY = padding - minY * scaleDraw;
     markers.forEach((m) => {
         ctx.beginPath();
         ctx.arc(offsetX + m.x * scaleDraw, canvas.height - (offsetY + m.y * scaleDraw), m.dist * scaleDraw, 0, 2 * Math.PI);
