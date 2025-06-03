@@ -177,8 +177,8 @@ function wlsTrilateration(markers) {
 // maxIterations: максимум итераций
 // tolerance: точность остановки
 // Возвращает {x, y} — найденные координаты источника
-function enhancedNlsTrilateration(markers, options = {}) {
-    // Параметры с значениями по умолчанию
+function nlsTrilateration(markers, options = {}) {
+   // Параметры с значениями по умолчанию
     const {
         initialGuess = null,
         maxIterations = 100,
