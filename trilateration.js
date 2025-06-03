@@ -177,65 +177,131 @@ function wlsTrilateration(markers) {
 // maxIterations: максимум итераций
 // tolerance: точность остановки
 // Возвращает {x, y} — найденные координаты источника
-function nlsTrilateration(markers, initialGuess = null, maxIterations = 100, tolerance = 1e-6) {
+function enhancedNlsTrilateration(markers, options = {}) {
+    // Параметры с значениями по умолчанию
+    const {
+        initialGuess = null,
+        maxIterations = 100,
+        tolerance = 1e-6,
+        baseMarkerWeight = 1000,
+        minAccuracy = 0.1
+    } = options;
+
     if (markers.length < 3) return null;
-    // Инициализация начального предположения
-    let x;
-    if (initialGuess && Array.isArray(initialGuess) && initialGuess.length === 2) {
-        x = [...initialGuess];
-    } else {
-        // Среднее координат маяков
-        x = markers.reduce((acc, b) => [acc[0] + b.x, acc[1] + b.y], [0, 0]);
-        x = [x[0] / markers.length, x[1] / markers.length];
-    }
-    let lambda = 0.001; // Параметр Левенберга-Марквардта
+
+    // 1. Подготовка данных с весами
+    const positions = [];
+    const distances = [];
+    const weights = [];
+    
+    // Находим базовый маркер (ближайший)
+    const baseMarker = markers.reduce((closest, curr) => 
+        curr.dist < closest.dist ? curr : closest);
+    
+    // Добавляем базовый маркер с большим весом
+    positions.push([baseMarker.x, baseMarker.y]);
+    distances.push(baseMarker.dist);
+    weights.push(baseMarkerWeight);
+    
+    // Добавляем остальные маркеры с весами
+    markers.forEach(marker => {
+        if (marker === baseMarker) return;
+        
+        positions.push([marker.x, marker.y]);
+        distances.push(marker.dist);
+        // Вес обратно пропорционален погрешности (если есть)
+        const accuracy = marker.accuracy || 1.0;
+        weights.push(1.0 / (accuracy + minAccuracy));
+    });
+
+    // 2. Начальное приближение (средневзвешенное)
+    let x = initialGuess ? [...initialGuess] : calculateWeightedCenter(positions, weights);
+
+    // 3. Параметры оптимизации
+    let lambda = 0.001;
     let iter = 0;
     let delta = [Infinity, Infinity];
-    while (iter < maxIterations && (Math.abs(delta[0]) > tolerance || Math.abs(delta[1]) > tolerance)) {
-        // Остатки (разница между расчетным и измеренным расстоянием)
-        const residuals = markers.map(b => {
-            const dx = x[0] - b.x;
-            const dy = x[1] - b.y;
+    let prevError = Infinity;
+
+    while (iter < maxIterations && 
+           (Math.abs(delta[0]) > tolerance || Math.abs(delta[1]) > tolerance)) {
+        
+        // 4. Вычисление взвешенных невязок
+        const residuals = positions.map((pos, i) => {
+            const dx = x[0] - pos[0];
+            const dy = x[1] - pos[1];
             const r = Math.sqrt(dx*dx + dy*dy) || 1e-8;
-            return r - b.dist;
+            return (r - distances[i]) * weights[i];
         });
-        // Матрица Якоби (производные по x и y)
-        const J = markers.map(b => {
-            const dx = x[0] - b.x;
-            const dy = x[1] - b.y;
+
+        // 5. Матрица Якоби с весами
+        const J = positions.map((pos, i) => {
+            const dx = x[0] - pos[0];
+            const dy = x[1] - pos[1];
             const r = Math.sqrt(dx*dx + dy*dy) || 1e-8;
-            return [dx / r, dy / r];
+            return [dx / r * weights[i], dy / r * weights[i]];
         });
-        // Транспонирование J
+
+        // 6. Обновление позиции (аналогично предыдущему)
         const JT = J[0].map((_, i) => J.map(row => row[i]));
-        // JTJ — матрица Гессе
+        
         const JTJ = [
-            [JT[0].reduce((acc, val, i) => acc + val * J[i][0], 0), JT[0].reduce((acc, val, i) => acc + val * J[i][1], 0)],
-            [JT[1].reduce((acc, val, i) => acc + val * J[i][0], 0), JT[1].reduce((acc, val, i) => acc + val * J[i][1], 0)]
+            [JT[0].reduce((acc, val, i) => acc + val * J[i][0], 0), 
+            JT[0].reduce((acc, val, i) => acc + val * J[i][1], 0)],
+            [JT[1].reduce((acc, val, i) => acc + val * J[i][0], 0), 
+            JT[1].reduce((acc, val, i) => acc + val * J[i][1], 0)]
         ];
-        // Добавление lambda к диагонали
+
         JTJ[0][0] += lambda;
         JTJ[1][1] += lambda;
-        // -J^T * residuals
+
         const JTr = [
             JT[0].reduce((acc, val, i) => acc + val * residuals[i], 0),
             JT[1].reduce((acc, val, i) => acc + val * residuals[i], 0)
         ].map(v => -v);
-        // Решение системы 2x2 (через определитель)
-        const determinant = JTJ[0][0] * JTJ[1][1] - JTJ[0][1] * JTJ[1][0];
-        if (Math.abs(determinant) < 1e-12) break; // Вырожденная матрица
+
+        const det = JTJ[0][0] * JTJ[1][1] - JTJ[0][1] * JTJ[1][0];
+        if (Math.abs(det) < 1e-12) break;
+
         delta = [
-            (JTJ[1][1] * JTr[0] - JTJ[0][1] * JTr[1]) / determinant,
-            (-JTJ[1][0] * JTr[0] + JTJ[0][0] * JTr[1]) / determinant
+            (JTJ[1][1] * JTr[0] - JTJ[0][1] * JTr[1]) / det,
+            (-JTJ[1][0] * JTr[0] + JTJ[0][0] * JTr[1]) / det
         ];
-        // Обновление координат
-        x[0] += delta[0];
-        x[1] += delta[1];
-        // Адаптация lambda (уменьшаем для сходимости)
-        lambda *= 0.9;
+
+        // 7. Адаптивное управление параметром lambda
+        const newX = [x[0] + delta[0], x[1] + delta[1]];
+        const newError = calculateTotalError(newX, positions, distances, weights);
+        
+        if (newError < prevError) {
+            x = newX;
+            lambda *= 0.5; // Уменьшаем lambda при успешном шаге
+            prevError = newError;
+        } else {
+            lambda *= 2.0; // Увеличиваем lambda при неудачном шаге
+        }
+
         iter++;
     }
+
     return { x: x[0], y: x[1] };
+}
+
+// Вспомогательная функция для расчета средневзвешенного центра
+function calculateWeightedCenter(positions, weights) {
+    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+    const x = positions.reduce((sum, pos, i) => sum + pos[0] * weights[i], 0) / totalWeight;
+    const y = positions.reduce((sum, pos, i) => sum + pos[1] * weights[i], 0) / totalWeight;
+    return [x, y];
+}
+
+// Функция расчета общей ошибки
+function calculateTotalError(point, positions, distances, weights) {
+    return positions.reduce((sum, pos, i) => {
+        const dx = point[0] - pos[0];
+        const dy = point[1] - pos[1];
+        const r = Math.sqrt(dx*dx + dy*dy);
+        return sum + Math.pow((r - distances[i]) * weights[i], 2);
+    }, 0);
 }
 
 // === Визуализация окружностей и точек на canvas ===
