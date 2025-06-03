@@ -106,19 +106,54 @@ document.getElementById('checkCollinearity').onclick = () => {
 // Возвращает {x, y} — координаты источника, минимизирующие сумму квадратов ошибок
 function llsTrilateration(markers) {
     if (markers.length < 3) return null;
-    // Берём три ближайшие метки
+    
+    // Берем три ближайшие метки (как в оригинальном коде)
     const sorted = [...markers].sort((a, b) => a.dist - b.dist);
     const [A, B, C] = sorted;
-    // Координаты и расстояния
-    const x1 = A.x, y1 = A.y;
-    const x2 = B.x, y2 = B.y;
-    const x3 = C.x, y3 = C.y;
-    const d1 = A.dist, d2 = B.dist, d3 = C.dist;
-    // Формулы для решения системы трёх окружностей
-    const S = 2 * (x1*(y2-y3) + x2*(y3-y1) + x3*(y1-y2));
-    if (Math.abs(S) < 1e-8) return null; // Коллинеарность
-    const x = ((d1*d1 - d2*d2 + x2*x2 - x1*x1 + y2*y2 - y1*y1) * (y3 - y1) - (d1*d1 - d3*d3 + x3*x3 - x1*x1 + y3*y3 - y1*y1) * (y2 - y1)) / S;
-    const y = ((d1*d1 - d3*d3 + x3*x3 - x1*x1 + y3*y3 - y1*y1) * (x2 - x1) - (d1*d1 - d2*d2 + x2*x2 - x1*x1 + y2*y2 - y1*y1) * (x3 - x1)) / S;
+    
+    // Выбираем базовый маркер (ближайший)
+    const base = A;
+    const x1 = base.x, y1 = base.y, d1 = base.dist;
+    
+    // Создаем матрицы для метода наименьших квадратов
+    const a = [
+        [2*(B.x - x1), 2*(B.y - y1)],
+        [2*(C.x - x1), 2*(C.y - y1)]
+    ];
+    
+    const b = [
+        Math.pow(d1, 2) - Math.pow(B.dist, 2) - Math.pow(x1, 2) + Math.pow(B.x, 2) - Math.pow(y1, 2) + Math.pow(B.y, 2),
+        Math.pow(d1, 2) - Math.pow(C.dist, 2) - Math.pow(x1, 2) + Math.pow(C.x, 2) - Math.pow(y1, 2) + Math.pow(C.y, 2)
+    ];
+    
+    // Решаем систему ATA * x = ATb
+    // ATA = aT * a
+    const aT = [[a[0][0], a[1][0]], [a[0][1], a[1][1]]];
+    const aTA = [
+        [
+            aT[0][0]*a[0][0] + aT[0][1]*a[1][0],
+            aT[0][0]*a[0][1] + aT[0][1]*a[1][1]
+        ],
+        [
+            aT[1][0]*a[0][0] + aT[1][1]*a[1][0],
+            aT[1][0]*a[0][1] + aT[1][1]*a[1][1]
+        ]
+    ];
+    
+    // ATb = aT * b
+    const aTB = [
+        aT[0][0]*b[0] + aT[0][1]*b[1],
+        aT[1][0]*b[0] + aT[1][1]*b[1]
+    ];
+    
+    // Решаем систему методом Крамера (для 2x2)
+    const det = aTA[0][0]*aTA[1][1] - aTA[0][1]*aTA[1][0];
+    
+    if (Math.abs(det) < 1e-8) return null; // Система вырождена
+    
+    const x = (aTA[1][1]*aTB[0] - aTA[0][1]*aTB[1]) / det;
+    const y = (aTA[0][0]*aTB[1] - aTA[1][0]*aTB[0]) / det;
+    
     return { x, y };
 }
 
