@@ -358,7 +358,9 @@ document.getElementById("calcTrilatRssi").onclick = () => {
 
   res += `<div class="calculation-block">`;
   res += `<h4>LLS Метод:</h4>`;
-  res += `<p>Координаты: ${lls ? `${lls.x.toFixed(15)}, ${lls.y.toFixed(15)}` : "Ошибка/Коллинеарность"}</p>`;
+  res += `<p>Координаты: ${
+    lls ? `${lls.x.toFixed(15)}, ${lls.y.toFixed(15)}` : "Ошибка/Коллинеарность"
+  }</p>`;
   res += llsResiduals;
 
   // Отображение промежуточных расчетов LLS
@@ -375,12 +377,16 @@ document.getElementById("calcTrilatRssi").onclick = () => {
 
   res += `<div class="calculation-block">`;
   res += `<h4>WLS Метод:</h4>`;
-  res += `<p>Координаты: ${wls ? `${wls.x.toFixed(15)}, ${wls.y.toFixed(15)}` : "Ошибка"}</p>`;
+  res += `<p>Координаты: ${
+    wls ? `${wls.x.toFixed(15)}, ${wls.y.toFixed(15)}` : "Ошибка"
+  }</p>`;
   res += `</div>`; // Close calculation-block for WLS
 
   res += `<div class="calculation-block">`;
   res += `<h4>NLS Метод:</h4>`;
-  res += `<p>Координаты: ${nls ? `${nls.x.toFixed(15)}, ${nls.y.toFixed(15)}` : "Ошибка"}</p>`;
+  res += `<p>Координаты: ${
+    nls ? `${nls.x.toFixed(15)}, ${nls.y.toFixed(15)}` : "Ошибка"
+  }</p>`;
   res += `</div>`; // Close calculation-block for NLS
 
   res += `</div>`; // Close calculation-columns
@@ -418,18 +424,19 @@ document.getElementById("calcTrilatRssi").onclick = () => {
 
 // Вспомогательная функция для форматирования матриц в MathJax
 function formatMatrixForMathJax(matrix) {
-    if (!matrix || matrix.length === 0) return '';
+  if (!matrix || matrix.length === 0) return "";
 
-    // Проверяем, является ли это одномерным массивом (вектором)
-    if (!Array.isArray(matrix[0])) { 
-        const rows = matrix.map(val => val); 
-        return `\\begin{pmatrix}${rows.join('\\\\')}\\end{pmatrix}`;
-    } else { // Это двумерный массив (матрица)
-        const rows = matrix.map(row => {
-            return row.map(val => val).join(' & ');
-        });
-        return `\\begin{pmatrix}${rows.join('\\\\')}\\end{pmatrix}`;
-    }
+  // Проверяем, является ли это одномерным массивом (вектором)
+  if (!Array.isArray(matrix[0])) {
+    const rows = matrix.map((val) => val);
+    return `\\begin{pmatrix}${rows.join("\\\\")}\\end{pmatrix}`;
+  } else {
+    // Это двумерный массив (матрица)
+    const rows = matrix.map((row) => {
+      return row.map((val) => val).join(" & ");
+    });
+    return `\\begin{pmatrix}${rows.join("\\\\")}\\end{pmatrix}`;
+  }
 }
 
 // Пример с math.js
@@ -446,14 +453,13 @@ function llsTrilaterationMatrix(beacons) {
     const x0 = base.x,
       y0 = base.y,
       d0 = base.dist;
-    A.push([2 * (xi - x0), 2 * (yi - y0)]);
+    A.push([xi - x0, yi - y0]);
     b.push(
-      Math.pow(d0, 2) -
-        Math.pow(di, 2) -
-        Math.pow(x0, 2) +
-        Math.pow(xi, 2) -
-        Math.pow(y0, 2) +
-        Math.pow(yi, 2)
+      0.5 *
+        (Math.pow(xi, 2) +
+          Math.pow(yi, 2) -
+          Math.pow(di, 2) -
+          (Math.pow(x0, 2) + Math.pow(y0, 2) - Math.pow(d0, 2)))
     );
   }
   // Решение через псевдообратную (на случай переопределённой системы)
@@ -471,8 +477,8 @@ function llsTrilaterationMatrix(beacons) {
       At: formatMatrixForMathJax(At),
       AtA: formatMatrixForMathJax(AtA),
       Atb: formatMatrixForMathJax(Atb),
-      solution: formatMatrixForMathJax(solution)
-    }
+      solution: formatMatrixForMathJax(solution),
+    },
   };
   return result;
 }
