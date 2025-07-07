@@ -139,62 +139,74 @@ function nlsTrilateration(markers, initialGuess = null, maxIterations = 100, tol
     return { x: x[0], y: x[1] };
 }
 
+// === Panzoom: масштабирование и перемещение canvas ===
+canvas.width = 1200;
+canvas.height = 800;
+const panzoomInstance = Panzoom(canvas, {
+  maxScale: 10,
+  minScale: 0.1,
+  contain: 'outside'
+});
+canvas.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel);
+
 // === Визуализация (аналогично trilateration.js, с инверсией Y) ===
 function drawAllCircles(markers) {
     if (markers.length < 3) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const sorted = [...markers].sort((a, b) => a.dist - b.dist);
-    const base = sorted[0];
-    // Находим min/max для автосмещения
-    let minX = markers[0].x, maxX = markers[0].x, minY = markers[0].y, maxY = markers[0].y;
+    // Находим min/max с учетом радиусов
+    let minX = markers[0].x - markers[0].dist, maxX = markers[0].x + markers[0].dist;
+    let minY = markers[0].y - markers[0].dist, maxY = markers[0].y + markers[0].dist;
     markers.forEach(m => {
         minX = Math.min(minX, m.x - m.dist);
         maxX = Math.max(maxX, m.x + m.dist);
         minY = Math.min(minY, m.y - m.dist);
         maxY = Math.max(maxY, m.y + m.dist);
     });
-    // Добавляем отступы
-    const padding = 20;
-    const width = Math.ceil(maxX - minX + 2 * padding);
-    const height = Math.ceil(maxY - minY + 2 * padding);
-    // Минимальный размер
-    canvas.width = Math.max(600, width);
-    canvas.height = Math.max(600, height);
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    // Новый масштаб
-    const scaleX = (canvas.width - 2 * padding) / (maxX - minX + 1);
-    const scaleY = (canvas.height - 2 * padding) / (maxY - minY + 1);
+    // Центр координат (0,0) — центр canvas
+    const centerCanvasX = canvas.width / 2;
+    const centerCanvasY = canvas.height / 2;
+    // Находим максимальное отклонение от (0,0) по X и Y
+    const maxAbsX = Math.max(Math.abs(minX), Math.abs(maxX));
+    const maxAbsY = Math.max(Math.abs(minY), Math.abs(maxY));
+    // Масштаб: чтобы всё влезло с запасом
+    const padding = 40;
+    const scaleX = (canvas.width / 2 - padding) / maxAbsX;
+    const scaleY = (canvas.height / 2 - padding) / maxAbsY;
     const scaleDraw = Math.min(scaleX, scaleY);
-    // Смещение для центрирования
-    const offsetX = padding - minX * scaleDraw;
-    const offsetY = padding - minY * scaleDraw;
+    // Функция перевода координат в canvas
+    function toCanvas(x, y) {
+        return [centerCanvasX + x * scaleDraw, centerCanvasY - y * scaleDraw];
+    }
+    // Рисуем окружности и точки
     markers.forEach((m) => {
+        const [cx, cy] = toCanvas(m.x, m.y);
         ctx.beginPath();
-        ctx.arc(offsetX + m.x * scaleDraw, canvas.height - (offsetY + m.y * scaleDraw), m.dist * scaleDraw, 0, 2 * Math.PI);
+        ctx.arc(cx, cy, m.dist * scaleDraw, 0, 2 * Math.PI);
         ctx.strokeStyle = 'rgba(255,0,0,0.4)';
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(offsetX + m.x * scaleDraw, canvas.height - (offsetY + m.y * scaleDraw), 5, 0, 2 * Math.PI);
+        ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
         ctx.fillStyle = 'red';
         ctx.fill();
         ctx.font = '12px Arial';
         ctx.fillStyle = 'white';
-        ctx.fillText(m.name, offsetX + m.x * scaleDraw + 8, canvas.height - (offsetY + m.y * scaleDraw) - 8);
+        ctx.fillText(m.name, cx + 8, cy - 8);
     });
-    return { offsetX, offsetY, scaleDraw };
+    // Возвращаем функцию перевода и масштаб для других элементов
+    return { toCanvas, scaleDraw };
 }
 
-function drawMethodPoint(point, offsetX, offsetY, scaleDraw, color, label) {
+function drawMethodPoint(point, toCanvas, scaleDraw, color, label) {
     if (!point) return;
+    const [cx, cy] = toCanvas(point.x, point.y);
     ctx.beginPath();
-    ctx.arc(offsetX + point.x * scaleDraw, canvas.height - (offsetY + point.y * scaleDraw), 7, 0, 2 * Math.PI);
+    ctx.arc(cx, cy, 7, 0, 2 * Math.PI);
     ctx.fillStyle = color;
     ctx.fill();
     ctx.font = 'bold 14px Arial';
     ctx.fillStyle = color;
-    ctx.fillText(label, offsetX + point.x * scaleDraw + 10, canvas.height - (offsetY + point.y * scaleDraw));
+    ctx.fillText(label, cx + 10, cy);
 }
 
 function circleIntersections(c1, r1, c2, r2) {
@@ -216,22 +228,23 @@ function circleIntersections(c1, r1, c2, r2) {
     ];
 }
 
-function drawIntersections(markers, offsetX, offsetY, scaleDraw) {
+function drawIntersections(markers, toCanvas, scaleDraw) {
     for (let i = 0; i < markers.length; i++) {
         for (let j = i + 1; j < markers.length; j++) {
             const p1 = markers[i];
             const p2 = markers[j];
             const r1 = markers[i].dist * scaleDraw;
             const r2 = markers[j].dist * scaleDraw;
-            const inters = circleIntersections(p1, r1, p2, r2);
+            const inters = circleIntersections(p1, r1 / scaleDraw, p2, r2 / scaleDraw);
             inters.forEach((pt, idx) => {
+                const [cx, cy] = toCanvas(pt.x, pt.y);
                 ctx.beginPath();
-                ctx.arc(offsetX + pt.x * scaleDraw, canvas.height - (offsetY + pt.y * scaleDraw), 5, 0, 2 * Math.PI);
+                ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
                 ctx.fillStyle = 'lime';
                 ctx.fill();
                 ctx.font = '12px Arial';
                 ctx.fillStyle = 'lime';
-                ctx.fillText(`I${i+1}${j+1}.${idx+1}`, offsetX + pt.x * scaleDraw + 8, canvas.height - (offsetY + pt.y * scaleDraw));
+                ctx.fillText(`I${i+1}${j+1}.${idx+1}`, cx + 8, cy);
             });
         }
     }
@@ -266,7 +279,7 @@ document.getElementById('calcTrilatRssi').onclick = () => {
         return;
     }
     let res = '<b>Результаты трилатерации:</b><br>';
-    const lls = llsTrilateration(markers);
+    const lls = llsTrilaterationMatrix(markers);
     const wls = wlsTrilateration(markers);
     const nls = nlsTrilateration(markers);
     let llsResiduals = '';
@@ -279,15 +292,38 @@ document.getElementById('calcTrilatRssi').onclick = () => {
         });
         llsResiduals = '<br><b>Остатки (LLS):</b><br>' + dists.map((d, i) => `Метка ${i+1}: ${d.toFixed(2)} м (ожидалось ${[A,B,C][i].dist.toFixed(2)} м)`).join('<br>');
     }
-    res += `<b>LLS:</b> ${lls ? `${lls.x.toFixed(2)}, ${lls.y.toFixed(2)}` : 'Ошибка/Коллинеарность'}${llsResiduals}<br>`;
-    res += `<b>WLS:</b> ${wls ? `${wls.x.toFixed(2)}, ${wls.y.toFixed(2)}` : 'Ошибка'}<br>`;
-    res += `<b>NLS:</b> ${nls ? `${nls.x.toFixed(2)}, ${nls.y.toFixed(2)}` : 'Ошибка'}<br>`;
+    res += `<b>LLS:</b> ${lls ? `${lls.x.toFixed(15)}, ${lls.y.toFixed(15)}` : 'Ошибка/Коллинеарность'}${llsResiduals}<br>`;
+    res += `<b>WLS:</b> ${wls ? `${wls.x.toFixed(15)}, ${wls.y.toFixed(15)}` : 'Ошибка'}<br>`;
+    res += `<b>NLS:</b> ${nls ? `${nls.x.toFixed(15)}, ${nls.y.toFixed(15)}` : 'Ошибка'}<br>`;
     resultsDiv.innerHTML = res;
     const drawParams = drawAllCircles(markers);
     if (drawParams) {
-        drawMethodPoint(lls, drawParams.offsetX, drawParams.offsetY, drawParams.scaleDraw, 'blue', 'LLS');
-        drawMethodPoint(wls, drawParams.offsetX, drawParams.offsetY, drawParams.scaleDraw, 'orange', 'WLS');
-        drawMethodPoint(nls, drawParams.offsetX, drawParams.offsetY, drawParams.scaleDraw, 'purple', 'NLS');
-        drawIntersections(markers, drawParams.offsetX, drawParams.offsetY, drawParams.scaleDraw);
+        drawMethodPoint(lls, drawParams.toCanvas, drawParams.scaleDraw, 'blue', 'LLS');
+        drawMethodPoint(wls, drawParams.toCanvas, drawParams.scaleDraw, 'orange', 'WLS');
+        drawMethodPoint(nls, drawParams.toCanvas, drawParams.scaleDraw, 'purple', 'NLS');
+        drawIntersections(markers, drawParams.toCanvas, drawParams.scaleDraw);
     }
-}; 
+};
+
+// Пример с math.js
+function llsTrilaterationMatrix(beacons) {
+    if (beacons.length < 3) return null;
+    // Базовая точка (можно брать первую или ближайшую)
+    const base = beacons[0];
+    const A = [];
+    const b = [];
+    for (let i = 1; i < beacons.length; i++) {
+        const xi = beacons[i].x, yi = beacons[i].y, di = beacons[i].dist;
+        const x0 = base.x, y0 = base.y, d0 = base.dist;
+        A.push([2 * (xi - x0), 2 * (yi - y0)]);
+        b.push(
+            Math.pow(d0, 2) - Math.pow(di, 2) - Math.pow(x0, 2) + Math.pow(xi, 2) - Math.pow(y0, 2) + Math.pow(yi, 2)
+        );
+    }
+    // Решение через псевдообратную (на случай переопределённой системы)
+    const At = math.transpose(A);
+    const AtA = math.multiply(At, A);
+    const Atb = math.multiply(At, b);
+    const solution = math.lusolve(AtA, Atb);
+    return { x: solution[0][0], y: solution[1][0] };
+} 
