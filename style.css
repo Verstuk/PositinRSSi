@@ -61,10 +61,8 @@ h1 {
   text-align: center;
 }
 
-
-
 h2 {
-    margin: 0;
+  margin: 0;
   font-size: 24px;
   color: var(--color-text);
   text-align: center;
@@ -101,7 +99,7 @@ p {
 }
 
 nav {
-    display: block;
+  display: block;
 }
 
 ul {
@@ -142,6 +140,55 @@ main {
   margin-top: 30px;
   text-align: center;
   margin-bottom: 30px;
+}
+
+.calculation-results {
+  background-color: var(--color-bg-medium);
+  border: 1px solid var(--color-stroke);
+  border-radius: var(--border-10);
+  padding: 20px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+.calculation-block {
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid var(--color-stroke);
+  border-radius: var(--border-8);
+  background-color: var(--color-bg);
+}
+
+.calculation-block h4 {
+  color: var(--color-primary);
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.calculation-block p {
+  font-size: 16px;
+  margin: 5px 0;
+  color: var(--color-text);
+}
+
+.calculation-block .math-formula {
+  background-color: var(--color-bg-light);
+  padding: 10px;
+  border-radius: var(--border-8);
+  overflow-x: auto;
+}
+
+.calculation-columns {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+  flex-wrap: wrap; /* Позволяет колонкам переноситься на новую строку на маленьких экранах */
+}
+
+.calculation-columns .calculation-block {
+  flex: 1;
+  min-width: 280px; /* Минимальная ширина для каждой колонки */
+  max-width: 350px; /* Максимальная ширина для каждой колонки */
 }
 
 .description > div {
@@ -260,8 +307,8 @@ input {
 }
 
 .btn {
-    text-align: center;
-    margin-top: 20px;
+  text-align: center;
+  margin-top: 20px;
 }
 
 .btn_distance_rssi {
@@ -274,17 +321,16 @@ input {
   font-size: 16px;
   transition: background-color 0.3s ease;
   margin-right: 30px;
-
 }
 
 .formula {
-    font-size: 28px;
+  font-size: 28px;
 }
 
 .btn_draw {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
 }
 
 #markersContainer {
@@ -317,7 +363,7 @@ input {
 
 #results {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 10px;
 }

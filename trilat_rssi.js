@@ -304,6 +304,7 @@ document.getElementById("calcTrilatRssi").onclick = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     return;
   }
+
   // Получаем параметры среды
   const txPower = parseFloat(document.getElementById("txPower").value);
   const n = parseFloat(document.getElementById("n").value);
@@ -328,7 +329,9 @@ document.getElementById("calcTrilatRssi").onclick = () => {
     console.warn("Некорректные метки:", invalids);
     return;
   }
-  let res = "<b>Результаты трилатерации:</b><br>";
+  let res = `<div class="calculation-results">`;
+  res += `<h3>Результаты трилатерации:</h3>`;
+
   const lls = llsTrilaterationMatrix(markers);
   const wls = wlsTrilateration(markers);
   const nls = nlsTrilateration(markers);
@@ -341,25 +344,48 @@ document.getElementById("calcTrilatRssi").onclick = () => {
       return d;
     });
     llsResiduals =
-      "<br><b>Остатки (LLS):</b><br>" +
+      "<p><b>Остатки (LLS):</b></p>" +
       dists
         .map(
           (d, i) =>
-            `Метка ${i + 1}: ${d.toFixed(2)} м (ожидалось ${[A, B, C][
+            `<p>Метка ${i + 1}: ${d.toFixed(2)} м (ожидалось ${[A, B, C][
               i
-            ].dist.toFixed(2)} м)`
+            ].dist.toFixed(2)} м)</p>`
         )
-        .join("<br>");
+        .join("");
   }
-  res += `<b>LLS:</b> ${
-    lls ? `${lls.x.toFixed(15)}, ${lls.y.toFixed(15)}` : "Ошибка/Коллинеарность"
-  }${llsResiduals}<br>`;
-  res += `<b>WLS:</b> ${
-    wls ? `${wls.x.toFixed(15)}, ${wls.y.toFixed(15)}` : "Ошибка"
-  }<br>`;
-  res += `<b>NLS:</b> ${
-    nls ? `${nls.x.toFixed(15)}, ${nls.y.toFixed(15)}` : "Ошибка"
-  }<br>`;
+  res += `<div class="calculation-columns">`; // Start calculation-columns
+
+  res += `<div class="calculation-block">`;
+  res += `<h4>LLS Метод:</h4>`;
+  res += `<p>Координаты: ${lls ? `${lls.x.toFixed(15)}, ${lls.y.toFixed(15)}` : "Ошибка/Коллинеарность"}</p>`;
+  res += llsResiduals;
+
+  // Отображение промежуточных расчетов LLS
+  if (lls && lls.calculations) {
+    res += `<p>Промежуточные расчеты LLS:</p>`;
+    res += `<div class="math-formula"><p>Матрица A: \\[${lls.calculations.A}\\]</p></div>`;
+    res += `<div class="math-formula"><p>Вектор b: \\[${lls.calculations.b}\\]</p></div>`;
+    res += `<div class="math-formula"><p>Транспонированная матрица A (A^T): \\[${lls.calculations.At}\\]</p></div>`;
+    res += `<div class="math-formula"><p>Произведение A^TA: \\[${lls.calculations.AtA}\\]</p></div>`;
+    res += `<div class="math-formula"><p>Произведение A^Tb: \\[${lls.calculations.Atb}\\]</p></div>`;
+    res += `<div class="math-formula"><p>Решение (x, y): \\[${lls.calculations.solution}\\]</p></div>`;
+  }
+  res += `</div>`; // Close calculation-block for LLS
+
+  res += `<div class="calculation-block">`;
+  res += `<h4>WLS Метод:</h4>`;
+  res += `<p>Координаты: ${wls ? `${wls.x.toFixed(15)}, ${wls.y.toFixed(15)}` : "Ошибка"}</p>`;
+  res += `</div>`; // Close calculation-block for WLS
+
+  res += `<div class="calculation-block">`;
+  res += `<h4>NLS Метод:</h4>`;
+  res += `<p>Координаты: ${nls ? `${nls.x.toFixed(15)}, ${nls.y.toFixed(15)}` : "Ошибка"}</p>`;
+  res += `</div>`; // Close calculation-block for NLS
+
+  res += `</div>`; // Close calculation-columns
+  res += `</div>`; // Close calculation-results
+
   resultsDiv.innerHTML = res;
   const drawParams = drawAllCircles(markers);
   if (drawParams) {
@@ -386,7 +412,25 @@ document.getElementById("calcTrilatRssi").onclick = () => {
     );
     drawIntersections(markers, drawParams.toCanvas, drawParams.scaleDraw);
   }
+  MathJax.typesetPromise([resultsDiv]);
+  console.log("resultsDiv innerHTML:", resultsDiv.innerHTML);
 };
+
+// Вспомогательная функция для форматирования матриц в MathJax
+function formatMatrixForMathJax(matrix) {
+    if (!matrix || matrix.length === 0) return '';
+
+    // Проверяем, является ли это одномерным массивом (вектором)
+    if (!Array.isArray(matrix[0])) { 
+        const rows = matrix.map(val => val); 
+        return `\\begin{pmatrix}${rows.join('\\\\')}\\end{pmatrix}`;
+    } else { // Это двумерный массив (матрица)
+        const rows = matrix.map(row => {
+            return row.map(val => val).join(' & ');
+        });
+        return `\\begin{pmatrix}${rows.join('\\\\')}\\end{pmatrix}`;
+    }
+}
 
 // Пример с math.js
 function llsTrilaterationMatrix(beacons) {
@@ -417,5 +461,18 @@ function llsTrilaterationMatrix(beacons) {
   const AtA = math.multiply(At, A);
   const Atb = math.multiply(At, b);
   const solution = math.lusolve(AtA, Atb);
-  return { x: solution[0][0], y: solution[1][0] };
+
+  const result = {
+    x: solution[0][0],
+    y: solution[1][0],
+    calculations: {
+      A: formatMatrixForMathJax(A),
+      b: formatMatrixForMathJax(b),
+      At: formatMatrixForMathJax(At),
+      AtA: formatMatrixForMathJax(AtA),
+      Atb: formatMatrixForMathJax(Atb),
+      solution: formatMatrixForMathJax(solution)
+    }
+  };
+  return result;
 }
