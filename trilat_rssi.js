@@ -204,8 +204,8 @@ function drawAllCircles(markers) {
     maxY = Math.max(maxY, m.y + m.dist);
   });
   // Центр координат (0,0) — центр canvas
-  const centerCanvasX = canvas.width / 2 - 500;
-  const centerCanvasY = canvas.height / 2 - 500;
+  const centerCanvasX = canvas.width / 2 - 100;
+  const centerCanvasY = canvas.height / 2;
   // Находим максимальное отклонение от (0,0) по X и Y
   const maxAbsX = Math.max(Math.abs(minX), Math.abs(maxX));
   const maxAbsY = Math.max(Math.abs(minY), Math.abs(maxY));
