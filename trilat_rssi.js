@@ -110,119 +110,175 @@ function wlsTrilateration(markers) {
 }
 
 // === WLS ===
-function wlsTrilaterationMatrix(markers) {
+// Пример с math.js
+function wlsTrilaterationMatrix(markers, p, epsilon = 1e-6) {
   if (markers.length < 3) return null;
 
-  // Инициализация массивов
-  let A = [];
-  let b = [];
-  let W = [];
+  // Сортируем маяки по возрастанию дистанции
+  const sortedBeacons = [...markers].sort((a, b) => a.dist - b.dist);
+  const base = sortedBeacons[0]; // Базовый маяк (ближайший)
 
-  // Заполнение массивов A, b и W
-  for (const m of markers) {
-    const w = 1 / (m.dist * m.dist + 1e-8);
-    A.push([m.x, m.y, 1]); // Используем 1 как свободный член для уравнения
-    b.push(m.x * m.x + m.y * m.y - m.dist * m.dist);
-    W.push(w);
+  const A = [];
+  const b = [];
+  const weights = [];
+
+  // Предварительно вычисляем веса для каждого маяка (кроме базового)
+  for (let i = 1; i < sortedBeacons.length; i++) {
+    const di = sortedBeacons[i].dist;
+    // Вес = 1 / (d_i^2 + epsilon) для избежания деления на 0
+    const weight = 1 / (Math.pow(di, p) + epsilon);
+    weights.push(weight);
   }
 
-  // Преобразование массивов в матрицы math.js
-  A = math.matrix(A); // Размерность: n x 3
-  b = math.matrix(b).reshape([b.length, 1]); // Размерность: n x 1
-  W = math.diag(W); // Создание диагональной матрицы весов размерности: n x n
+  // Формируем матрицу A и вектор b с учетом весов
+  for (let i = 1; i < sortedBeacons.length; i++) {
+    const beacon = sortedBeacons[i];
+    const xi = beacon.x;
+    const yi = beacon.y;
+    const di = beacon.dist;
 
-  // Вычисление W^(1/2)
-  const W_sqrt = math.map(W, math.sqrt);
+    const x0 = base.x;
+    const y0 = base.y;
+    const d0 = base.dist;
 
-  // Вычисление A' и b'
-  const A_prime = math.multiply(W_sqrt, A);
-  const b_prime = math.multiply(W_sqrt, b);
+    // Компоненты уравнения
+    const ai = xi - x0;
+    const bi = yi - y0;
+    const ci =
+      0.5 * (xi * xi + yi * yi - di * di - (x0 * x0 + y0 * y0 - d0 * d0));
 
-  // Решение системы линейных уравнений
-  const solution = math.lusolve(
-    math.multiply(math.transpose(A_prime), A_prime),
-    math.multiply(math.transpose(A_prime), b_prime)
-  );
+    // Применяем вес: умножаем на sqrt(w_i)
+    const weightFactor = Math.sqrt(weights[i - 1]);
+    A.push([ai * weightFactor, bi * weightFactor]);
+    b.push(ci * weightFactor);
+  }
 
-  // Извлечение вектора решения (матрица 3x1)
-  const x = solution.get([0, 0]); // Исправлено: два индекса
-  const y = solution.get([1, 0]); // Исправлено: два индекса
+  // Решение через нормальные уравнения с весами
+  const At = math.transpose(A);
+  const AtA = math.multiply(At, A);
+  const Atb = math.multiply(At, b);
+  const solution = math.lusolve(AtA, Atb);
 
-  return { x, y };
+  return {
+    x: solution[0][0],
+    y: solution[1][0],
+    calculations: {
+      A: formatMatrixForMathJax(A),
+      b: formatMatrixForMathJax(b),
+      At: formatMatrixForMathJax(At),
+      AtA: formatMatrixForMathJax(AtA),
+      Atb: formatMatrixForMathJax(Atb),
+      solution: formatMatrixForMathJax(solution),
+    }, // Опционально: промежуточные матрицы
+  };
 }
 
 // === NLS (Левенберг-Марквардт) ===
+/**
+ * Выполняет трилатерацию методом Левенберга-Марквардта
+ * @param {Array} markers - Массив маркеров {x, y, dist}
+ * @param {Array} initialGuess - Начальное приближение [x, y] (опционально)
+ * @param {number} maxIterations - Макс. число итераций (по умолчанию 1000)
+ * @param {number} tolerance - Допустимая погрешность (по умолчанию 1e-6)
+ * @returns {Object|null} Координаты {x, y} или null при ошибке
+ */
 function nlsTrilateration(
   markers,
   initialGuess = null,
-  maxIterations = 100,
+  maxIterations = 10000,
   tolerance = 1e-6
 ) {
+  // Проверка минимального количества маркеров
   if (markers.length < 3) return null;
+
+  // Инициализация начальной точки
   let x;
   if (
     initialGuess &&
     Array.isArray(initialGuess) &&
     initialGuess.length === 2
   ) {
-    x = [...initialGuess];
+    x = [...initialGuess]; // Использование пользовательского приближения
   } else {
+    // Рассчет центроида как начального приближения
     x = markers.reduce((acc, b) => [acc[0] + b.x, acc[1] + b.y], [0, 0]);
     x = [x[0] / markers.length, x[1] / markers.length];
   }
-  let lambda = 0.001;
-  let iter = 0;
-  let delta = [Infinity, Infinity];
+
+  let lambda = 0.001; // Параметр регуляризации
+  let iter = 0; // Счетчик итераций
+  let delta = [Infinity, Infinity]; // Вектор изменения координат
+
+  // Главный цикл оптимизации
   while (
     iter < maxIterations &&
     (Math.abs(delta[0]) > tolerance || Math.abs(delta[1]) > tolerance)
   ) {
+    // 1. Расчет невязок (разница между расчетным и реальным расстоянием)
     const residuals = markers.map((b) => {
       const dx = x[0] - b.x;
       const dy = x[1] - b.y;
-      const r = Math.sqrt(dx * dx + dy * dy) || 1e-8;
-      return r - b.dist;
+      const r = Math.sqrt(dx * dx + dy * dy) || 1e-8; // Евклидово расстояние (защита от 0)
+      return r - b.dist; // Ошибка для текущего маркера
     });
+
+    // 2. Построение матрицы Якоби (частные производные)
     const J = markers.map((b) => {
       const dx = x[0] - b.x;
       const dy = x[1] - b.y;
       const r = Math.sqrt(dx * dx + dy * dy) || 1e-8;
-      return [dx / r, dy / r];
+      // Производные d(residual)/dx и d(residual)/dy
+      return [dx / r, dy / r]; // Единичный вектор направления
     });
+
+    // 3. Транспонирование матрицы Якоби (JT)
     const JT = J[0].map((_, i) => J.map((row) => row[i]));
+
+    // 4. Расчет матрицы JT*J (гессиан)
     const JTJ = [
       [
-        JT[0].reduce((acc, val, i) => acc + val * J[i][0], 0),
-        JT[0].reduce((acc, val, i) => acc + val * J[i][1], 0),
+        JT[0].reduce((acc, val, i) => acc + val * J[i][0], 0), // JTJ[0][0]
+        JT[0].reduce((acc, val, i) => acc + val * J[i][1], 0), // JTJ[0][1]
       ],
       [
-        JT[1].reduce((acc, val, i) => acc + val * J[i][0], 0),
-        JT[1].reduce((acc, val, i) => acc + val * J[i][1], 0),
+        JT[1].reduce((acc, val, i) => acc + val * J[i][0], 0), // JTJ[1][0]
+        JT[1].reduce((acc, val, i) => acc + val * J[i][1], 0), // JTJ[1][1]
       ],
     ];
+
+    // 5. Регуляризация гессиана (добавление lambda к диагонали)
     JTJ[0][0] += lambda;
     JTJ[1][1] += lambda;
+
+    // 6. Расчет вектора JT * residuals
     const JTr = [
       JT[0].reduce((acc, val, i) => acc + val * residuals[i], 0),
       JT[1].reduce((acc, val, i) => acc + val * residuals[i], 0),
-    ].map((v) => -v);
+    ].map((v) => -v); // Смена знака для направления коррекции
+
+    // 7. Решение системы уравнений (JTJ + lambda*I) * delta = -JTr
     const determinant = JTJ[0][0] * JTJ[1][1] - JTJ[0][1] * JTJ[1][0];
-    if (Math.abs(determinant) < 1e-12) break;
+    if (Math.abs(determinant) < 1e-12) break; // Защита от вырожденной матрицы
+
+    // Формулы Крамера для решения 2x2:
     delta = [
       (JTJ[1][1] * JTr[0] - JTJ[0][1] * JTr[1]) / determinant,
       (-JTJ[1][0] * JTr[0] + JTJ[0][0] * JTr[1]) / determinant,
     ];
+
+    // 8. Обновление позиции
     x[0] += delta[0];
     x[1] += delta[1];
+
+    // 9. Адаптация параметра регуляризации (уменьшение при успешном шаге)
     lambda *= 0.9;
     iter++;
   }
-  return { x: x[0], y: x[1] };
+
+  return { x: x[0], y: x[1] }; // Возврат результата
 }
 
 // === Panzoom: масштабирование и перемещение canvas ===
-canvas.width = 1200;
-canvas.height = 800;
 const panzoomInstance = Panzoom(canvas, {
   maxScale: 10,
   minScale: 0.1,
@@ -354,6 +410,7 @@ document.getElementById("calcTrilatRssi").onclick = () => {
     document.getElementById("obstacleLoss").value
   );
   const snr = parseFloat(document.getElementById("snr").value);
+  const p = parseFloat(document.getElementById("power").value);
   // Считаем расстояния для каждой метки
   const markers = beacons.map((b) => ({
     name: b.name,
@@ -375,7 +432,7 @@ document.getElementById("calcTrilatRssi").onclick = () => {
   res += `<h3>Результаты трилатерации:</h3>`;
 
   const lls = llsTrilaterationMatrix(markers);
-  const wls = wlsTrilateration(markers);
+  const wls = wlsTrilaterationMatrix(markers, p);
   const nls = nlsTrilateration(markers);
   let llsResiduals = "";
   if (lls) {
@@ -396,9 +453,11 @@ document.getElementById("calcTrilatRssi").onclick = () => {
         )
         .join("");
   }
-  res += `<div class="calculation-columns">`; // Start calculation-columns
+  // В функции, где формируются результаты
+  res += `<div class="results-container">`; // Главный контейнер для всех методов
 
-  res += `<div class="calculation-block">`;
+  // LLS Блок
+  res += `<div class="method-block lls-block">`;
   res += `<h4>LLS Метод:</h4>`;
   res += `<p>Координаты: ${
     lls ? `${lls.x.toFixed(15)}, ${lls.y.toFixed(15)}` : "Ошибка/Коллинеарность"
@@ -415,23 +474,36 @@ document.getElementById("calcTrilatRssi").onclick = () => {
     res += `<div class="math-formula"><p>Произведение A^Tb: \\[${lls.calculations.Atb}\\]</p></div>`;
     res += `<div class="math-formula"><p>Решение (x, y): \\[${lls.calculations.solution}\\]</p></div>`;
   }
-  res += `</div>`; // Close calculation-block for LLS
+  res += `</div>`; // Закрываем LLS блок
 
-  res += `<div class="calculation-block">`;
+  // WLS Блок
+  res += `<div class="method-block wls-block">`;
   res += `<h4>WLS Метод:</h4>`;
   res += `<p>Координаты: ${
     wls ? `${wls.x.toFixed(15)}, ${wls.y.toFixed(15)}` : "Ошибка"
   }</p>`;
-  res += `</div>`; // Close calculation-block for WLS
 
-  res += `<div class="calculation-block">`;
+  // Отображение промежуточных расчетов WLS
+  if (wls && wls.calculations) {
+    res += `<p>Промежуточные расчеты WLS:</p>`;
+    res += `<div class="math-formula"><p>Матрица A: \\[${wls.calculations.A}\\]</p></div>`;
+    res += `<div class="math-formula"><p>Вектор b: \\[${wls.calculations.b}\\]</p></div>`;
+    res += `<div class="math-formula"><p>Транспонированная матрица A (A^T): \\[${wls.calculations.At}\\]</p></div>`;
+    res += `<div class="math-formula"><p>Произведение A^TA: \\[${wls.calculations.AtA}\\]</p></div>`;
+    res += `<div class="math-formula"><p>Произведение A^Tb: \\[${wls.calculations.Atb}\\]</p></div>`;
+    res += `<div class="math-formula"><p>Решение (x, y): \\[${wls.calculations.solution}\\]</p></div>`;
+  }
+  res += `</div>`; // Закрываем WLS блок
+
+  // NLS Блок
+  res += `<div class="method-block nls-block">`;
   res += `<h4>NLS Метод:</h4>`;
   res += `<p>Координаты: ${
     nls ? `${nls.x.toFixed(15)}, ${nls.y.toFixed(15)}` : "Ошибка"
   }</p>`;
-  res += `</div>`; // Close calculation-block for NLS
+  res += `</div>`; //Закрываем NLS блок
 
-  res += `</div>`; // Close calculation-columns
+  res += `</div>`; // Закрываем главный контейнер
   res += `</div>`; // Close calculation-results
 
   resultsDiv.innerHTML = res;
@@ -482,17 +554,17 @@ function formatMatrixForMathJax(matrix) {
 }
 
 // Пример с math.js
-function llsTrilaterationMatrix(beacons) {
-  if (beacons.length < 3) return null;
+function llsTrilaterationMatrix(markers) {
+  if (markers.length < 3) return null;
 
   // Сортируем маяки по возрастанию дистанции
-  const sortedBeacons = [...beacons].sort((a, b) => a.dist - b.dist);
+  const sortedBeacons = [...markers].sort((a, b) => a.dist - b.dist);
 
   // Базовая точка (можно брать первую или ближайшую)
   const base = sortedBeacons[0];
   const A = [];
   const b = [];
-  for (let i = 1; i < beacons.length; i++) {
+  for (let i = 1; i < markers.length; i++) {
     const xi = sortedBeacons[i].x,
       yi = sortedBeacons[i].y,
       di = sortedBeacons[i].dist;
