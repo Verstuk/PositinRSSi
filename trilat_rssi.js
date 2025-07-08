@@ -109,6 +109,48 @@ function wlsTrilateration(markers) {
   return { x: x / sumW, y: y / sumW };
 }
 
+// === WLS ===
+function wlsTrilaterationMatrix(markers) {
+  if (markers.length < 3) return null;
+
+  // Инициализация массивов
+  let A = [];
+  let b = [];
+  let W = [];
+
+  // Заполнение массивов A, b и W
+  for (const m of markers) {
+    const w = 1 / (m.dist * m.dist + 1e-8);
+    A.push([m.x, m.y, 1]); // Используем 1 как свободный член для уравнения
+    b.push(m.x * m.x + m.y * m.y - m.dist * m.dist);
+    W.push(w);
+  }
+
+  // Преобразование массивов в матрицы math.js
+  A = math.matrix(A); // Размерность: n x 3
+  b = math.matrix(b).reshape([b.length, 1]); // Размерность: n x 1
+  W = math.diag(W); // Создание диагональной матрицы весов размерности: n x n
+
+  // Вычисление W^(1/2)
+  const W_sqrt = math.map(W, math.sqrt);
+
+  // Вычисление A' и b'
+  const A_prime = math.multiply(W_sqrt, A);
+  const b_prime = math.multiply(W_sqrt, b);
+
+  // Решение системы линейных уравнений
+  const solution = math.lusolve(
+    math.multiply(math.transpose(A_prime), A_prime),
+    math.multiply(math.transpose(A_prime), b_prime)
+  );
+
+  // Извлечение вектора решения (матрица 3x1)
+  const x = solution.get([0, 0]); // Исправлено: два индекса
+  const y = solution.get([1, 0]); // Исправлено: два индекса
+
+  return { x, y };
+}
+
 // === NLS (Левенберг-Марквардт) ===
 function nlsTrilateration(
   markers,
