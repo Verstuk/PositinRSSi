@@ -62,7 +62,7 @@ function rssiToDistance(rssi, txPower, n, obstacleLoss, snr) {
   // Поправка на интерференцию
   const interferenceLoss = -10 * Math.log10(1 + 1 / snr);
   // Учет внешних факторов (препятствия и интерференция)
-  const effectiveRSSI = rssi - obstacleLoss - interferenceLoss;
+  const effectiveRSSI = rssi - obstacleLoss;
   // Формула для расчета расстояния
   return Math.pow(10, (txPower - effectiveRSSI) / (10 * n));
 }
@@ -442,14 +442,18 @@ function formatMatrixForMathJax(matrix) {
 // Пример с math.js
 function llsTrilaterationMatrix(beacons) {
   if (beacons.length < 3) return null;
+
+  // Сортируем маяки по возрастанию дистанции
+  const sortedBeacons = [...beacons].sort((a, b) => a.dist - b.dist);
+
   // Базовая точка (можно брать первую или ближайшую)
-  const base = beacons[0];
+  const base = sortedBeacons[0];
   const A = [];
   const b = [];
   for (let i = 1; i < beacons.length; i++) {
-    const xi = beacons[i].x,
-      yi = beacons[i].y,
-      di = beacons[i].dist;
+    const xi = sortedBeacons[i].x,
+      yi = sortedBeacons[i].y,
+      di = sortedBeacons[i].dist;
     const x0 = base.x,
       y0 = base.y,
       d0 = base.dist;
